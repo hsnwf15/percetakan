@@ -1,0 +1,24 @@
+/percetakan
+  /public
+    index.php            ← “router” sederhana
+    /assets              ← css/js/img
+    /uploads             ← file desain (otomatis per-order)
+  /app
+    config.php           ← pengaturan dasar
+    db.php               ← koneksi PDO
+    auth.php             ← login/logout + middleware cek role
+    helpers.php          ← util (csrf, sanitize, flash)
+    routes.php           ← daftar route -> controller
+    /controllers
+      OrdersController.php
+      RevisionsController.php
+      VendorController.php
+      PaymentsController.php
+      AuthController.php
+    /views
+      layout.php
+      login.php
+      orders_list.php
+      orders_form.php
+      order_detail.php   ← tab: Design, Vendor, Finance
+      dashboard.php
