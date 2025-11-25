@@ -27,7 +27,7 @@
             <div><b>Produk:</b> <?= h($order["product"]) ?></div>
             <div><b>Qty:</b> <?= h($order["quantity"]) ?></div>
             <div><b>Channel:</b> <?= h($order["channel"]) ?></div>
-            <div><b>Deadline:</b> <?= h($order["deadline"]) ?></div>
+            <div><b>Deadline:</b> <?= h(date("d-m-Y H:i", strtotime($order["deadline"]))) ?></div>
           </div>
           <div class="col-md-6">
             <div><b>Assign Desainer:</b> <?= h(
@@ -91,9 +91,7 @@
               <?php foreach ($revisions as $rv): ?>
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                   <div>
-                    <div><b>Revisi ke-<?= h($rv["rev_no"]) ?></b> · <?= h(
-    $rv["created_at"],
-) ?></div>
+                    <div><b>Revisi ke-<?= h($rv["rev_no"]) ?></b> · <?= h(date("d-m-Y H:i", strtotime($rv["created_at"]))) ?></div>
                     <div class="small text-muted">Uploader: <?= h(
                         $rv["uploader"] ?? "-",
                     ) ?></div>

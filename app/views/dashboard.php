@@ -95,7 +95,7 @@
               <td><?= h($r["customer"] ?? "-") ?></td>
               <td><?= h($r["product"]) ?></td>
               <td><?= h($r["quantity"]) ?></td>
-              <td><?= h($r["deadline"]) ?></td>
+              <td><?= h(date("d-m-Y H:i", strtotime($r["deadline"]))) ?></td>
               <td><span class="badge bg-<?= status_badge_class(
                   $r["status"],
               ) ?>"><?= h($r["status"]) ?></span></td>
@@ -121,7 +121,7 @@
             <tr><td colspan="4" class="text-muted small p-3">Belum ada pembayaran.</td></tr>
           <?php else:foreach ($recentPay as $p): ?>
             <tr>
-              <td><?= h($p["paid_at"]) ?></td>
+              <td><?= h(date("d-m-Y H:i", strtotime($p["paid_at"]))) ?></td>
               <td><?= h($p["customer"] ?? "-") ?></td>
               <td><?= h($p["product"] ?? "-") ?></td>
               <td class="text-end">Rp <?= number_format(

@@ -12,6 +12,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 mb_internal_encoding("UTF-8");
 date_default_timezone_set("Asia/Makassar");
+setlocale(LC_TIME, 'id_ID.UTF-8');
 
 // Adjust these for your local DB
 $CFG = [

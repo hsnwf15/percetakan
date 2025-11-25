@@ -43,7 +43,7 @@
         <td><?= h($r["product"]) ?></td>
         <td><?= h($r["quantity"]) ?></td>
         <td><?= h($r["channel"]) ?></td>
-        <td><?= h($r["deadline"]) ?></td>
+        <td><?= h(date("d-m-Y H:i", strtotime($r["deadline"]))) ?></td>
         <td><span class="badge bg-<?= status_badge_class($r["status"]) ?>">
     <?= h($r["status"]) ?>
   </span></td>
