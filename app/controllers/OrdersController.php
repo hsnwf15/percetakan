@@ -273,4 +273,3 @@ ORDER BY o.created_at DESC LIMIT 200";
         redirect("?r=orders/detail&id=" . $id);
     }
 }
-?>

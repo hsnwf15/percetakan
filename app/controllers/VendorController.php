@@ -80,4 +80,3 @@ class VendorController
         redirect("?r=orders/detail&id=" . $orderId . "&tab=vendor");
     }
 }
-

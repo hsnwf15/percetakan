@@ -39,4 +39,3 @@ class AuthController
         redirect("?r=auth/loginForm");
     }
 }
-?>
