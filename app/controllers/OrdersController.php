@@ -218,6 +218,16 @@ ORDER BY o.created_at DESC LIMIT 200";
         $outstanding = ($order["total_price"] ?? 0) - $totalPaid;
 
         $statuses = ["admin", "design", "vendor", "ready", "picked"];
+        // Ambil riwayat status vendor
+        $logsStmt = $pdo->prepare("
+    SELECT vsl.*, u.name AS user_name
+    FROM vendor_status_logs vsl
+    LEFT JOIN users u ON u.id = vsl.changed_by
+    WHERE vsl.order_id = ?
+    ORDER BY vsl.changed_at DESC
+");
+        $logsStmt->execute([$order["id"]]);   // atau $id / $orderId, sesuaikan dengan variabelmu
+        $vendorLogs = $logsStmt->fetchAll(PDO::FETCH_ASSOC);
         view(
             "order_detail",
             compact(
@@ -229,6 +239,7 @@ ORDER BY o.created_at DESC LIMIT 200";
                 "payments",
                 "totalPaid",
                 "outstanding",
+                "vendorLogs",
             ),
         );
     }

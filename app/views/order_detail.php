@@ -247,6 +247,38 @@
                         </div>
                     </div>
                 </div>
+                <hr>
+                <h6 class="mb-2">Riwayat Status Mitra</h6>
+
+                <?php if (!empty($vendorLogs)): ?>
+                    <ul class="list-unstyled small mb-0">
+                        <?php foreach ($vendorLogs as $log): ?>
+                            <li class="mb-1">
+                                <span class="badge bg-secondary text-uppercase">
+                                    <?= h($log["new_status"]) ?>
+                                </span>
+                                <span class="text-muted">
+                                    <?= date("d-m-Y H:i", strtotime($log["changed_at"])) ?>
+                                    <?php if (!empty($log["user_name"])): ?>
+                                        · oleh <?= h($log["user_name"]) ?>
+                                    <?php endif; ?>
+                                </span>
+                                <?php if (!empty($log["old_status"])): ?>
+                                    <br><span class="text-muted">
+                                        dari: <?= h($log["old_status"]) ?>
+                                    </span>
+                                <?php endif; ?>
+                                <?php if (!empty($log["note"])): ?>
+                                    <br><span><?= nl2br(h($log["note"])) ?></span>
+                                <?php endif; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php else: ?>
+                    <p class="text-muted small mb-0">
+                        Belum ada perubahan status mitra.
+                    </p>
+                <?php endif; ?>
             </div>
         </div>
     </div>

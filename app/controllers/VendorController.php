@@ -11,12 +11,12 @@ class VendorController
         require_login();
         csrf_check();
         global $pdo;
-        $orderId = (int) ($_POST["order_id"] ?? 0);
+        $orderId = (int)($_POST["order_id"] ?? 0);
         if ($orderId <= 0) {
             die("order invalid");
         }
 
-        // cek akses: designer hanya boleh jika assigned; admin/owner bebas
+        // cek akses: designer hanya boleh jika assigned
         $me = current_user();
         $row = $pdo->prepare("SELECT assigned_designer FROM orders WHERE id=?");
         $row->execute([$orderId]);
@@ -27,7 +27,7 @@ class VendorController
         }
         if (
             ($me["role"] ?? "") === "designer" &&
-            (int) $order["assigned_designer"] !== (int) $me["id"]
+            (int)$order["assigned_designer"] !== (int)$me["id"]
         ) {
             http_response_code(403);
             die("Forbidden");
@@ -47,32 +47,49 @@ class VendorController
             $status = "sent";
         }
 
-        // upsert
-        $pdo->prepare(
-            "
-      INSERT INTO vendor_jobs (order_id, vendor_code, status, return_info)
-      VALUES (?,?,?,?)
-      ON DUPLICATE KEY UPDATE vendor_code=VALUES(vendor_code), status=VALUES(status), return_info=VALUES(return_info)
-    ",
-        )->execute([$orderId, $vendor, $status, $catatan]);
+        // 1️⃣ Ambil status lama sebelum update
+        $stmtOld = $pdo->prepare("SELECT status FROM vendor_jobs WHERE order_id=?");
+        $stmtOld->execute([$orderId]);
+        $oldStatus = $stmtOld->fetchColumn();
 
-        // otomatis ubah status order:
-        // - kalau 'done' → set orders.status='ready'
-        // - kalau belum pernah ke vendor (status order masih 'design') → pindahkan ke 'vendor'
+        // 2️⃣ Simpan log jika status berubah
+        if ($oldStatus !== $status) {
+            $log = $pdo->prepare("
+            INSERT INTO vendor_status_logs (order_id, old_status, new_status, changed_by, note)
+            VALUES (?, ?, ?, ?, ?)
+        ");
+            $log->execute([
+                $orderId,
+                $oldStatus,
+                $status,
+                $me["id"] ?? null,
+                $catatan !== "" ? $catatan : null,
+            ]);
+        }
+
+        // 3️⃣ Upsert vendor_jobs
+        $pdo->prepare("
+        INSERT INTO vendor_jobs (order_id, vendor_code, status, return_info)
+        VALUES (?,?,?,?)
+        ON DUPLICATE KEY UPDATE
+            vendor_code=VALUES(vendor_code),
+            status=VALUES(status),
+            return_info=VALUES(return_info)
+    ")->execute([$orderId, $vendor, $status, $catatan]);
+
+        // 4️⃣ Update status order (logika lama tidak diubah)
         $cur = $pdo->prepare("SELECT status FROM orders WHERE id=?");
         $cur->execute([$orderId]);
         $os = $cur->fetchColumn();
 
         if ($status === "done") {
-            $pdo->prepare(
-                "UPDATE orders SET status='ready' WHERE id=?",
-            )->execute([$orderId]);
+            $pdo->prepare("UPDATE orders SET status='ready' WHERE id=?")
+                ->execute([$orderId]);
             flash("Vendor selesai. Status order pindah ke 'ready'.");
         } else {
             if ($os === "design") {
-                $pdo->prepare(
-                    "UPDATE orders SET status='vendor' WHERE id=?",
-                )->execute([$orderId]);
+                $pdo->prepare("UPDATE orders SET status='vendor' WHERE id=?")
+                    ->execute([$orderId]);
             }
             flash("Data vendor disimpan.");
         }

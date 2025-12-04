@@ -161,6 +161,7 @@
         </div>
     </div>
 </div>
+<br>
 
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
