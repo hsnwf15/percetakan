@@ -10,7 +10,7 @@
 <form class="row g-2 mb-3" method="get" action="<?= h(BASE_URL) ?>/">
     <input type="hidden" name="r" value="customers/index">
     <div class="col-auto">
-        <input class="form-control" name="q" placeholder="Cari nama/telepon/email" value="<?= h(
+        <input class="form-control" name="q" placeholder="Cari nama/telepon" value="<?= h(
                                                                                                 $q ?? "",
                                                                                             ) ?>">
     </div>

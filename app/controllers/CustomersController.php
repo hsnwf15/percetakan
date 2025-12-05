@@ -16,7 +16,7 @@ class CustomersController
                 "SELECT * FROM customers WHERE name LIKE ? OR phone LIKE ? ORDER BY name LIMIT 200",
             );
             $like = "%{$q}%";
-            $stmt->execute([$like, $like, $like]);
+            $stmt->execute([$like, $like]);
         } else {
             $stmt = $pdo->query(
                 "SELECT * FROM customers ORDER BY name LIMIT 200",
