@@ -6,6 +6,18 @@
                     ) ?>" class="btn btn-sm btn-secondary">← Kembali</a>
     </div>
 </div>
+<?php
+$me   = current_user();
+$role = $me['role'] ?? '';
+?>
+
+<?php if ($role === 'designer' && !$canEdit): ?>
+    <div class="alert alert-warning mb-3">
+        Anda <strong>tidak ditugaskan</strong> pada order ini.
+        Tampilan hanya untuk <strong>melihat</strong>, tidak dapat mengubah data.
+    </div>
+<?php endif; ?>
+
 
 <ul class="nav nav-pills mb-3" id="tabs">
     <li class="nav-item"><button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-info" type="button">Info</button></li>
@@ -45,14 +57,14 @@
                             <?php csrf_field(); ?>
                             <input type="hidden" name="id" value="<?= h($order["id"]) ?>">
                             <div class="input-group">
-                                <select name="status" class="form-select">
+                                <select name="status" class="form-select" <?= !$canEdit ? 'disabled' : '' ?>>
                                     <?php foreach ($statuses as $s): ?>
                                         <option value="<?= $s ?>" <?= $order["status"] === $s
                                                                         ? "selected"
                                                                         : "" ?>><?= $s ?></option>
                                     <?php endforeach; ?>
                                 </select>
-                                <button class="btn btn-primary">Ubah Status</button>
+                                <button class="btn btn-primary" <?= !$canEdit ? 'disabled' : '' ?>>Ubah Status</button>
                             </div>
                         </form>
                         <div class="form-text">Alur: admin → design → vendor → ready → picked</div>
@@ -169,7 +181,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Pilih Mitra</label>
                                 <?php $vendorSel = $vendorJob["vendor_code"] ?? ""; ?>
-                                <select class="form-select" name="vendor_code" required>
+                                <select class="form-select" <?= !$canEdit ? 'disabled' : '' ?> name="vendor_code" required>
                                     <?php foreach (
                                         ["Mitra A", "Mitra B", "Mitra C", "Lainnya"]
                                         as $v
@@ -185,7 +197,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Status Produksi di Mitra</label>
                                 <?php $st = $vendorJob["status"] ?? "sent"; ?>
-                                <select class="form-select" name="status">
+                                <select class="form-select" name="status" <?= !$canEdit ? 'disabled' : '' ?>>
                                     <option value="sent" <?= $st === "sent"
                                                                 ? "selected"
                                                                 : "" ?>>Terkirim ke mitra (sent)</option>
@@ -201,13 +213,15 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Catatan/Keterangan</label>
-                                <textarea class="form-control" name="return_info" rows="3"
+                                <textarea class="form-control" name="return_info" rows="3" <?= !$canEdit ? 'disabled' : '' ?>
                                     placeholder="Nomor resi/jadwal ambil, masalah produksi, dll"><?= h(
                                                                                                         $vendorJob["return_info"] ?? "",
                                                                                                     ) ?></textarea>
                             </div>
 
-                            <button class="btn btn-primary">Simpan Vendor</button>
+                            <?php if ($canEdit): ?>
+                                <button class="btn btn-primary mt-2">Simpan Vendor</button>
+                            <?php endif; ?>
                         </form>
                     </div>
                 </div>
@@ -296,7 +310,7 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Metode / Jenis</label>
-                                <select class="form-select" name="method" required>
+                                <select class="form-select" <?= !$canEdit ? 'disabled' : '' ?> name="method" required>
                                     <option value="dp">DP</option>
                                     <option value="pelunasan">Pelunasan</option>
                                     <option value="cash">Cash</option>
@@ -307,18 +321,20 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Nominal (Rp)</label>
-                                <input class="form-control" type="number" name="amount" min="0" required>
+                                <input class="form-control" <?= !$canEdit ? 'disabled' : '' ?> type="number" name="amount" min="0" required>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label">Tanggal Bayar</label>
-                                <input class="form-control" type="datetime-local" name="paid_at"
+                                <input class="form-control" <?= !$canEdit ? 'disabled' : '' ?> type="datetime-local" name="paid_at"
                                     value="<?= date(
                                                 "Y-m-d\TH:i",
                                             ) ?>"> <!-- format input HTML -->
                             </div>
 
-                            <button class="btn btn-primary">Simpan</button>
+                            <?php if ($canEdit): ?>
+                                <button class="btn btn-primary mt-2">Simpan</button>
+                            <?php endif; ?>
                         </form>
 
                     </div>

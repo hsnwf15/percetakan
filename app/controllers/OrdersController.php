@@ -9,23 +9,55 @@ class OrdersController
     {
         require_login();
         global $pdo;
+
+        $me   = current_user();
+        $role = $me["role"] ?? "";
+
+        // Filter status (sudah ada sebelumnya)
         $status = $_GET["status"] ?? "";
-        $where = "";
-        $args = [];
+
+        // Filter scope: 'mine' (tugas saya) atau 'all' (semua)
+        // Default:
+        // - designer  → 'mine'
+        // - role lain → 'all'
+        $scope = $_GET["scope"] ?? (($role === "designer") ? "mine" : "all");
+
+        $whereParts = [];
+        $args       = [];
+
+        // filter status
         if ($status !== "") {
-            $where = "WHERE o.status = ?";
-            $args[] = $status;
+            $whereParts[] = "o.status = ?";
+            $args[]       = $status;
         }
-        $sql = "SELECT o.*, c.name AS customer
-FROM orders o
-LEFT JOIN customers c ON c.id=o.customer_id
-$where
-ORDER BY o.created_at DESC LIMIT 200";
+
+        // filter scope untuk designer
+        if ($role === "designer" && $scope === "mine") {
+            $whereParts[] = "o.assigned_designer = ?";
+            $args[]       = $me["id"];
+        }
+
+        $whereSql = "";
+        if (!empty($whereParts)) {
+            $whereSql = "WHERE " . implode(" AND ", $whereParts);
+        }
+
+        $sql = "
+        SELECT o.*, c.name AS customer
+        FROM orders o
+        LEFT JOIN customers c ON c.id = o.customer_id
+        $whereSql
+        ORDER BY o.created_at DESC
+        LIMIT 200
+    ";
+
         $stmt = $pdo->prepare($sql);
         $stmt->execute($args);
         $rows = $stmt->fetchAll();
-        view("orders_list", compact("rows", "status"));
+
+        view("orders_list", compact("rows", "status", "scope"));
     }
+
 
     public function create()
     {
@@ -171,14 +203,17 @@ ORDER BY o.created_at DESC LIMIT 200";
             die("Order tidak ditemukan");
         }
 
-        $me = current_user();
-        if (
-            ($me["role"] ?? "") === "designer" &&
-            (int) $order["assigned_designer"] !== (int) $me["id"]
-        ) {
-            http_response_code(403);
-            die("Forbidden: bukan order yang ditugaskan ke Anda.");
-        }
+        $me   = current_user();
+        $role = $me['role'] ?? '';
+
+        $isAssignedDesigner = (
+            $role === 'designer' &&
+            (int)($order['assigned_designer'] ?? 0) === (int)($me['id'] ?? 0)
+        );
+
+        // admin & owner tetap boleh edit semua
+        $canEdit = in_array($role, ['admin', 'owner'], true) || $isAssignedDesigner;
+
 
         // data revisi + user uploader
         $revs = $pdo->prepare("
@@ -240,6 +275,7 @@ ORDER BY o.created_at DESC LIMIT 200";
                 "totalPaid",
                 "outstanding",
                 "vendorLogs",
+                'canEdit'
             ),
         );
     }
