@@ -130,6 +130,26 @@ SELECT DATE(paid_at) d, SUM(amount) s
             )
             ->fetchAll();
 
+        // ===============================
+        // Card: Fee Desainer Minggu Ini
+        // ===============================
+        $stmt = $pdo->query("
+        SELECT 
+            u.id,
+            u.name,
+            COUNT(o.id) AS total_order,
+            SUM(o.designer_fee) AS total_fee
+        FROM orders o
+        JOIN users u ON u.id = o.assigned_designer
+        WHERE 
+            u.role = 'designer'
+            AND o.designer_fee > 0
+            AND YEARWEEK(o.created_at, 1) = YEARWEEK(CURDATE(), 1)
+        GROUP BY u.id, u.name
+        ORDER BY total_fee DESC
+    ");
+        $designerFees = $stmt->fetchAll();
+
         view(
             "dashboard",
             compact(
@@ -144,6 +164,7 @@ SELECT DATE(paid_at) d, SUM(amount) s
                 "recentPay",
                 "totalInvoice",
                 "totalPaidAll",
+                "designerFees",
             ),
         );
     }
@@ -163,5 +184,86 @@ SELECT DATE(paid_at) d, SUM(amount) s
             $data[] = isset($map[$d]) ? $map[$d] : 0;
         }
         return ["labels" => $labels, "data" => $data];
+    }
+
+    public function feeWeekly()
+    {
+        require_login();
+        global $pdo;
+
+        $me = current_user();
+
+        // Ambil minggu & tahun (default: minggu ini)
+        $week = (int)($_GET['week'] ?? date('W'));
+        $year = (int)($_GET['year'] ?? date('Y'));
+
+        // Filter role
+        $where = "";
+        $params = [$year, $week];
+
+        if (($me['role'] ?? '') === 'designer') {
+            $where = "AND o.assigned_designer = ?";
+            $params[] = $me['id'];
+        }
+
+        $sql = "
+        SELECT
+            u.id AS designer_id,
+            u.name AS designer_name,
+            COUNT(o.id) AS total_order,
+            SUM(o.designer_fee) AS total_fee
+        FROM orders o
+        JOIN users u ON u.id = o.assigned_designer
+        WHERE u.role = 'designer'
+          AND o.status IN ('vendor','ready','picked')
+          AND YEAR(o.design_done_at) = ?
+          AND WEEK(o.design_done_at, 1) = ?
+          $where
+        GROUP BY u.id, u.name
+        ORDER BY total_fee DESC
+    ";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll();
+
+        // Ambil tanggal dari week & year
+        $dto = new DateTime();
+        $dto->setISODate($year, $week);
+
+        // Nama bulan & tahun
+        $monthName = $dto->format('F'); // December
+        $monthYear = $dto->format('Y');
+
+        // Hitung minggu ke-n dalam bulan
+        $dayOfMonth = (int)$dto->format('j');
+        $weekOfMonth = (int)ceil($dayOfMonth / 7);
+
+        // Ubah nama bulan ke Bahasa Indonesia
+        $bulanMap = [
+            'January' => 'Januari',
+            'February' => 'Februari',
+            'March' => 'Maret',
+            'April' => 'April',
+            'May' => 'Mei',
+            'June' => 'Juni',
+            'July' => 'Juli',
+            'August' => 'Agustus',
+            'September' => 'September',
+            'October' => 'Oktober',
+            'November' => 'November',
+            'December' => 'Desember',
+        ];
+
+        $bulanIndo = $bulanMap[$monthName] ?? $monthName;
+
+
+        view("report_fee_weekly", compact(
+            "rows",
+            "week",
+            "year",
+            "weekOfMonth",
+            "bulanIndo"
+        ));
     }
 }
