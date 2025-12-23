@@ -9,6 +9,10 @@
 <?php
 $me   = current_user();
 $role = $me['role'] ?? '';
+$isDesigner = ($me['role'] ?? '') === 'designer';
+$isAssigned = (int)($order['assigned_designer'] ?? 0) === (int)$me['id'];
+$isDesignStage = $order['status'] === 'design';
+$canEditFee = $isDesigner && $isAssigned && $isDesignStage;
 ?>
 
 <?php if ($role === 'designer' && !$canEdit): ?>
@@ -147,6 +151,40 @@ $role = $me['role'] ?? '';
                         </form>
 
                         <hr>
+                        <div class="mb-3">
+                            <label class="form-label">Fee Desainer</label>
+
+                            <?php if ($canEditFee): ?>
+                                <form method="post" action="<?= h(url('orders/updateStatus')) ?>" class="d-flex gap-2">
+                                    <?php csrf_field(); ?>
+                                    <input type="hidden" name="id" value="<?= h($order['id']) ?>">
+
+                                    <input
+                                        type="number"
+                                        name="designer_fee"
+                                        class="form-control"
+                                        min="5000"
+                                        max="20000"
+                                        step="1000"
+                                        value="<?= h($order['designer_fee']) ?>"
+                                        required>
+
+                                    <button class="btn btn-primary">Simpan</button>
+                                </form>
+
+                                <div class="form-text">
+                                    Fee hanya bisa diubah saat tahap desain (5.000 – 20.000)
+                                </div>
+
+                            <?php else: ?>
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    value="Rp <?= number_format($order['designer_fee'], 0, ',', '.') ?>"
+                                    disabled>
+                            <?php endif; ?>
+                        </div>
+
                         <form method="post" action="<?= h(
                                                         url("rev/approveFinal"),
                                                     ) ?>" onsubmit="return confirm('Setujui final? Status akan pindah ke vendor.')">

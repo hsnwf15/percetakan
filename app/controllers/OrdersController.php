@@ -285,65 +285,64 @@ class OrdersController
         require_login();
         csrf_check();
         global $pdo;
-        $id = (int) ($_POST["id"] ?? 0);
-        $newFee  = (int)($_POST['designer_fee'] ?? 0);
-        $status = $_POST["status"] ?? "admin";
-        $allowed = ["admin", "design", "vendor", "ready", "picked"];
+
+        $id = (int)($_POST['id'] ?? 0);
+        $status = $_POST['status'] ?? 'design';
+        $newFee = (int)($_POST['designer_fee'] ?? 0);
+
+        if ($id <= 0) {
+            die("Order tidak valid");
+        }
+
+        $allowed = ['admin', 'design', 'vendor', 'ready', 'picked'];
         if (!in_array($status, $allowed, true)) {
             die("Status tidak valid");
         }
 
-        // Cek order & hak akses (supaya desainer tidak sembarang ubah)
-        $stmt = $pdo->prepare(
-            "SELECT assigned_designer FROM orders WHERE id=?",
-        );
+        // Ambil order
+        $stmt = $pdo->prepare("SELECT status, assigned_designer FROM orders WHERE id=?");
         $stmt->execute([$id]);
         $order = $stmt->fetch();
-        $row = $stmt->fetch();
-        if (!$row) {
+
+        if (!$order) {
             http_response_code(404);
             die("Order tidak ditemukan");
         }
 
         $me = current_user();
+
+        // Hak akses desainer
         if (
-            ($me["role"] ?? "") === "designer" &&
-            (int) $row["assigned_designer"] !== (int) $me["id"]
+            ($me['role'] ?? '') === 'designer' &&
+            (int)$order['assigned_designer'] !== (int)$me['id']
         ) {
             http_response_code(403);
             die("Forbidden");
         }
 
-        // Validasi Role & Assignment untuk desainer
-        if (
-            ($me['role'] ?? '') !== 'designer' ||
-            (int)$order['assigned_designer'] !== (int)$me['id']
-        ) {
-            http_response_code(403);
-            die("Kamu tidak berhak mengubah fee order ini");
+        // Desainer hanya boleh ubah fee saat status design
+        if (($me['role'] ?? '') === 'designer') {
+            if ($order['status'] !== 'design') {
+                die("Fee hanya bisa diubah saat tahap desain");
+            }
+
+            if ($newFee < 5000 || $newFee > 20000) {
+                die("Fee desain harus antara 5.000 – 20.000");
+            }
         }
 
-        // Hanya boleh ubah fee kalau status order masih 'design'
-        if ($order['status'] !== 'design') {
-            die("Fee hanya bisa diubah saat order masih tahap desain");
-        }
-
-        // Validasi besaran fee
-        if ($newFee < 5000 || $newFee > 20000) {
-            die("Fee desain harus antara 5.000 – 20.000");
-        }
-
-
-        $pdo->prepare("UPDATE orders SET status=? WHERE id=?")->execute([
+        // UPDATE SEKALIGUS
+        $pdo->prepare("
+        UPDATE orders
+        SET status = ?, designer_fee = ?
+        WHERE id = ?
+    ")->execute([
             $status,
-            $id,
+            $newFee,
+            $id
         ]);
-        flash("Status diperbarui: " . $status);
+
+        flash("Status & fee berhasil diperbarui");
         redirect("?r=orders/detail&id=" . $id);
-
-        $pdo->prepare("UPDATE orders SET designer_fee = ? WHERE id = ?")->execute([$newFee, $orderId]);
-
-        flash("Fee desainer berhasil diperbarui");
-        redirect("?r=orders/detail&id=" . $orderId);
     }
 }
