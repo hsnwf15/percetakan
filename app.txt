@@ -1,0 +1,73 @@
+🧩 SUMBER ASAL MASALAH / BACKGROUND
+1. Order masuk dari banyak channel tanpa sistem (WA / walk-in)
+- Customer pesan lewat WhatsApp atau datang langsung ke toko.
+- Chat WA menjadi arsip utama.
+- Order manual → rawan pesan hilang, lupa follow-up, double tasking.
+
+2. Desainer mengelola order secara manual
+- Ada 2 desainer dalam sistem aslinya.
+- Mereka memilih order sendiri dari WA tanpa assignment sistem.
+- Susah tracking siapa mengerjakan desain apa.
+- Tidak ada sistem revisi yang terstruktur.
+
+3. Percetakan tidak memiliki semua alat produksi
+- Banyak pekerjaan harus outsourcing ke mitra lain (vendor).
+    cetak spanduk
+    cetak cutting
+    cetak DTF
+    dll
+- Pengiriman file ke vendor dilakukan manual via email atau WA.
+- Tidak ada status tracking yang jelas.
+
+4. Admin/Kasir membuat nota secara manual pakai Excel
+- Format tidak konsisten
+- Data tidak tersentral
+- Tidak ada histori transaksi per pelanggan
+- Tidak ada laporan keuangan terstruktur
+
+5. Tidak ada database pelanggan
+- Pelanggan sering repeat order
+- Tapi nomor telepon & nama tidak dicatat dengan rapi
+- Sehingga layanan follow-up customer tidak efektif
+
+6. Tidak ada tracking waktu / timeline order
+- Customer bertanya:
+    "Kapan selesai kak?"
+- Jawabannya:
+    "Sebentar saya cek chatnya dulu"
+
+7. Observasi dari lapangan
+Ini sangat penting — karena kamu benar-benar mengumpulkan data lapangan. Observasimu menemukan bahwa:
+    banyak revisi terjadi karena komunikasi tidak jelas
+    revisi tidak dicatat sistematis
+    pelanggan sering tidak tahu status pengerjaan
+    desainer sering multitasking order dan bisa kelupaan
+    sistem kerja sebenarnya sudah berjalan — tapi fragmentasi & manual
+
+🧠 KESIMPULAN MASALAH UTAMA
+Masalah inti yang menjadi dasar aplikasi ini adalah:
+📌 Tidak adanya sistem informasi terintegrasi untuk mengelola order, desain, produksi vendor, pelanggan, dan pembayaran dalam percetakan.
+🎯 SOLUSI APLIKASI YANG KAMU BANGUN
+
+Aplikasi ini menyelesaikan semua masalah di atas melalui fitur:
+✔ Input order terpusat
+✔ Database pelanggan otomatis
+✔ Auto-assign desainer
+✔ Tracking status desain
+✔ Pengiriman status ke vendor
+✔ Log status produksi vendor (ini yang sedang kamu tambahkan)
+✔ Pembayaran DP / Lunas
+✔ Nota otomatis (PDF)
+✔ Dashboard monitoring
+✔ Role-based user authentication
+✔ Session & CSRF protection
+
+🧑‍🏫 UNTUK BIMBINGAN DOSEN
+
+Saat ditanya oleh dosen:
+
+"Masalah apa yang kalian angkat di sistem ini?"
+
+Jawaban akademisnya adalah:
+
+Aplikasi ini dibuat untuk menyelesaikan masalah pencatatan order, manajemen desain, monitoring vendor, dan pelaporan pembayaran di percetakan kecil yang selama ini dilakukan secara manual melalui WhatsApp dan spreadsheet.
