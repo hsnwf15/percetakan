@@ -1,24 +1,39 @@
-/percetakan
-  /public
-    index.php            ← “router” sederhana
-    /assets              ← css/js/img
-    /uploads             ← file desain (otomatis per-order)
-  /app
-    config.php           ← pengaturan dasar
-    db.php               ← koneksi PDO
-    auth.php             ← login/logout + middleware cek role
-    helpers.php          ← util (csrf, sanitize, flash)
-    routes.php           ← daftar route -> controller
-    /controllers
-      OrdersController.php
-      RevisionsController.php
-      VendorController.php
-      PaymentsController.php
-      AuthController.php
-    /views
-      layout.php
-      login.php
-      orders_list.php
-      orders_form.php
-      order_detail.php   ← tab: Design, Vendor, Finance
-      dashboard.php
+✅ Report 1 — Laporan Pemasukan Bulanan
+Tujuan: Mengetahui pemasukan usaha
+Isi:
+Total pemasukan
+Daftar transaksi
+Grafik pemasukan
+Sumber data:
+payments
+➡️ 1 report berdiri sendiri
+
+✅ Report 2 — Laporan Order Bulanan
+Tujuan: Mengetahui aktivitas produksi
+Isi:
+Jumlah order
+Status order
+Grafik distribusi status
+Sumber data:
+orders
+➡️ 1 report berdiri sendiri
+
+✅ Report 3 — Laporan Fee Desainer
+Tujuan: Mengetahui biaya SDM (desain)
+Isi:
+Rekap fee per desainer
+Rekap mingguan / bulanan
+Grafik batang fee
+Sumber data:
+orders (designer_fee)
+➡️ 1 report berdiri sendiri
+
+✅ Report 4 — Laporan Kinerja Desainer
+Tujuan: Evaluasi performa SDM
+Isi:
+Jumlah order per desainer
+Rata-rata fee
+Perbandingan antar desainer
+Sumber data:
+orders + users
+➡️ 1 report berdiri sendiri

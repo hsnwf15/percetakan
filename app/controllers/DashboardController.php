@@ -266,4 +266,76 @@ SELECT DATE(paid_at) d, SUM(amount) s
             "bulanIndo"
         ));
     }
+
+    public function pemasukanBulanan()
+    {
+        require_login();
+        global $pdo;
+
+        $month = (int)($_GET['month'] ?? date('m'));
+        $year  = (int)($_GET['year'] ?? date('Y'));
+
+        $start = sprintf('%04d-%02d-01', $year, $month);
+        $end   = date('Y-m-d', strtotime("$start +1 month"));
+
+        $stmt = $pdo->prepare("
+    SELECT COALESCE(SUM(p.amount),0) AS total
+    FROM payments p
+    JOIN orders o ON o.id = p.order_id
+    WHERE MONTH(p.paid_at) = ?
+      AND YEAR(p.paid_at) = ?
+");
+        $stmt->execute([$month, $year]);
+        $totalIncome = (float)$stmt->fetchColumn();
+
+
+        // $totalIncome = 0;
+        // foreach ($rows as $r) {
+        //     $totalIncome += (float)$r['amount'];
+        // }
+
+        /** =======================
+         * 2. DATA GRAFIK HARIAN
+         * ======================= */
+        $stmt = $pdo->prepare("
+  SELECT DATE(p.paid_at) AS tanggal, SUM(p.amount) AS total
+  FROM payments p
+  WHERE MONTH(p.paid_at)=? AND YEAR(p.paid_at)=?
+  GROUP BY DATE(p.paid_at)
+  ORDER BY tanggal
+");
+        $stmt->execute([$month, $year]);
+        $grafik = $stmt->fetchAll();
+
+        $labels = [];
+        $data = [];
+        foreach ($grafik as $g) {
+            $labels[] = date('d', strtotime($g['tanggal']));
+            $data[] = (int)$g['total'];
+        }
+
+        /** =======================
+         * 3. DETAIL PEMASUKAN
+         * ======================= */
+        $stmt = $pdo->prepare("
+  SELECT o.id AS order_id, c.name AS customer, o.total_price, p.amount, p.paid_at
+  FROM payments p
+  JOIN orders o ON o.id=p.order_id
+  LEFT JOIN customers c ON c.id=o.customer_id
+  WHERE MONTH(p.paid_at)=? AND YEAR(p.paid_at)=?
+  ORDER BY p.paid_at DESC
+");
+        $stmt->execute([$month, $year]);
+        $details = $stmt->fetchAll();
+
+        view('report_pemasukan_bulanan', compact(
+            'month',
+            'year',
+            'totalIncome',
+            'labels',
+            'data',
+            'details'
+        ));
+    }
+
 }

@@ -11,6 +11,7 @@ function dispatch($r)
         "finance" => "FinanceController",
         "invoice" => "InvoiceController",
         "dashboard" => "DashboardController",
+        "report" => "DashboardController",
     ];
     $class = $map[$ctl] ?? "OrdersController";
     require_once __DIR__ . "/controllers/" . $class . ".php";
@@ -20,4 +21,3 @@ function dispatch($r)
     }
     $c->$act();
 }
-?>
