@@ -3,6 +3,9 @@ require_once __DIR__ . "/../db.php";
 require_once __DIR__ . "/../helpers.php";
 require_once __DIR__ . "/../auth.php";
 
+use Dompdf\Dompdf;
+use Dompdf\Options;
+
 class DashboardController
 {
     public function index()
@@ -338,4 +341,78 @@ SELECT DATE(paid_at) d, SUM(amount) s
         ));
     }
 
+    public function incomePdf()
+    {
+        require_login();
+        global $pdo;
+
+        $month = (int)($_GET['month'] ?? date('m'));
+        $year  = (int)($_GET['year'] ?? date('Y'));
+
+        $stmt = $pdo->prepare("
+  SELECT o.id AS order_id, c.name AS customer, p.amount, p.paid_at
+  FROM payments p
+  JOIN orders o ON o.id=p.order_id
+  LEFT JOIN customers c ON c.id=o.customer_id
+  WHERE MONTH(p.paid_at)=? AND YEAR(p.paid_at)=?
+  ORDER BY p.paid_at ASC
+");
+        $stmt->execute([$month, $year]);
+        $details = $stmt->fetchAll();
+
+        $stmt = $pdo->prepare("
+  SELECT COALESCE(SUM(p.amount),0) total
+  FROM payments p
+  WHERE MONTH(p.paid_at)=? AND YEAR(p.paid_at)=?
+");
+        $stmt->execute([$month, $year]);
+        $totalIncome = (float)$stmt->fetchColumn();
+
+        // =======================
+        // Grafik Pemasukan Harian (untuk PDF) -> PNG base64
+        // =======================
+        $stmt = $pdo->prepare("
+            SELECT DATE(p.paid_at) AS tanggal, SUM(p.amount) AS total
+            FROM payments p
+            WHERE MONTH(p.paid_at)=? AND YEAR(p.paid_at)=?
+            GROUP BY DATE(p.paid_at)
+            ORDER BY tanggal
+        ");
+        $stmt->execute([$month, $year]);
+        $grafik = $stmt->fetchAll();
+
+        $labels = [];
+        $values = [];
+        foreach ($grafik as $g) {
+            $labels[] = date('d', strtotime($g['tanggal'])); // 01..31
+            $values[] = (float)($g['total'] ?? 0);
+        }
+
+        // Jika bulan ini tidak ada data, tetap bikin grafik kosong 1 bar supaya sumbu muncul
+        if (count($labels) === 0) {
+            $labels = ['01'];
+            $values = [0];
+        }
+
+        $chartUri = chart_bar_data_uri($labels, $values);
+
+        // Render HTML view ke variable
+        ob_start();
+        include __DIR__ . '/../views/report_income_pdf.php';
+        $html = ob_get_clean();
+
+        // Dompdf
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $dompdf->stream(
+            "Laporan_Pemasukan_{$month}_{$year}.pdf",
+            ["Attachment" => true]
+        );
+    }
 }

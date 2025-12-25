@@ -37,7 +37,7 @@ $year  = (int)($_GET['year'] ?? date('Y'));
                 <div class="card shadow-sm">
                     <div class="card-body">
                         <h6 class="text-muted">Jumlah Transaksi</h6>
-                        <h3><?= $rows['jumlah_transaksi'] ?? 0 ?></h3>
+                        <h3><?= count($details ?? []) ?></h3>
                     </div>
                 </div>
             </div>
