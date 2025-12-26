@@ -38,7 +38,7 @@
             </div>
         </div>
     </div>
-</div> 
+</div>
 
 <div class="row g-3 mt-1">
     <div class="col-lg-3">
@@ -79,24 +79,42 @@
     </div>
 </div>
 <br>
-<div class="row mb-4">
-    <div class="col-md-4">
-        <a href="?r=dashboard/pemasukanBulanan" class="card text-decoration-none shadow-sm">
-            <div class="card-body">
-                <h6 class="text-muted">Laporan</h6>
-                <h5>📊 Pemasukan Bulanan</h5>
-                <small class="text-muted">Detail pemasukan & export PDF</small>
-            </div>
-        </a>
-    </div>
+<!-- Laporan & Rekap (Shortcut) -->
+<div class="mt-3 mb-4">
+    <h5 class="mb-3">Laporan & Rekap</h5>
 
-    <div class="col-md-4">
-        <div class="card text-muted shadow-sm">
-            <div class="card-body">
-                <h6>Laporan</h6>
-                <h5>🎨 Rekap Fee Desainer</h5>
-                <small>(Coming Soon)</small>
-            </div>
+    <div class="row g-3">
+        <!-- Laporan Pemasukan Bulanan -->
+        <div class="col-md-4">
+            <a href="<?= h(url('dashboard/pemasukanBulanan')) ?>" class="card shadow-sm text-decoration-none">
+                <div class="card-body">
+                    <div class="text-muted">Laporan</div>
+                    <div class="fw-semibold" style="font-size:18px;">📊 Pemasukan Bulanan</div>
+                    <div class="text-muted" style="font-size:12px;">Summary + grafik + detail + export PDF</div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Laporan Order Bulanan -->
+        <div class="col-md-4">
+            <a href="<?= h(url('dashboard/orderBulanan')) ?>" class="card shadow-sm text-decoration-none">
+                <div class="card-body">
+                    <div class="text-muted">Laporan</div>
+                    <div class="fw-semibold" style="font-size:18px;">📦 Order Bulanan</div>
+                    <div class="text-muted" style="font-size:12px;">Jumlah order + rekap status + grafik distribusi</div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Rekap Fee Mingguan (kalau sudah ada halamannya nanti) -->
+        <div class="col-md-4">
+            <a href="<?= h(url('dashboard/feeMingguan')) ?>" class="card shadow-sm text-decoration-none">
+                <div class="card-body">
+                    <div class="text-muted">Rekap</div>
+                    <div class="fw-semibold" style="font-size:18px;">🎨 Fee Desainer</div>
+                    <div class="text-muted" style="font-size:12px;">Mingguan (reset tiap Senin) + laporan bulanan</div>
+                </div>
+            </a>
         </div>
     </div>
 </div>
