@@ -38,7 +38,7 @@
             </div>
         </div>
     </div>
-</div>
+</div> 
 
 <div class="row g-3 mt-1">
     <div class="col-lg-3">
@@ -78,7 +78,28 @@
         </div>
     </div>
 </div>
+<br>
+<div class="row mb-4">
+    <div class="col-md-4">
+        <a href="?r=dashboard/pemasukanBulanan" class="card text-decoration-none shadow-sm">
+            <div class="card-body">
+                <h6 class="text-muted">Laporan</h6>
+                <h5>📊 Pemasukan Bulanan</h5>
+                <small class="text-muted">Detail pemasukan & export PDF</small>
+            </div>
+        </a>
+    </div>
 
+    <div class="col-md-4">
+        <div class="card text-muted shadow-sm">
+            <div class="card-body">
+                <h6>Laporan</h6>
+                <h5>🎨 Rekap Fee Desainer</h5>
+                <small>(Coming Soon)</small>
+            </div>
+        </div>
+    </div>
+</div>
 <h4 class="mb-3">Fee Desainer Minggu Ini</h4>
 
 <div class="row">
