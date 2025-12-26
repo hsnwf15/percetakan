@@ -82,34 +82,34 @@
 <h4 class="mb-3">Fee Desainer Minggu Ini</h4>
 
 <div class="row">
-<?php if (empty($designerFees)): ?>
-    <div class="col-12">
-        <div class="alert alert-info">
-            Belum ada fee desainer di minggu ini.
-        </div>
-    </div>
-<?php else: ?>
-    <?php foreach ($designerFees as $d): ?>
-        <div class="col-md-4 mb-3">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title"><?= h($d['name']) ?></h5>
-
-                    <p class="mb-1">
-                        Total Order: <b><?= (int)$d['total_order'] ?></b>
-                    </p>
-
-                    <p class="mb-0">
-                        Total Fee:
-                        <span class="badge bg-success">
-                            Rp <?= number_format($d['total_fee'], 0, ',', '.') ?>
-                        </span>
-                    </p>
-                </div>
+    <?php if (empty($designerFees)): ?>
+        <div class="col-12">
+            <div class="alert alert-info">
+                Belum ada fee desainer di minggu ini.
             </div>
         </div>
-    <?php endforeach; ?>
-<?php endif; ?>
+    <?php else: ?>
+        <?php foreach ($designerFees as $d): ?>
+            <div class="col-md-4 mb-3">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title"><?= h($d['name']) ?></h5>
+
+                        <p class="mb-1">
+                            Total Order: <b><?= (int)$d['total_order'] ?></b>
+                        </p>
+
+                        <p class="mb-0">
+                            Total Fee:
+                            <span class="badge bg-success">
+                                Rp <?= number_format($d['total_fee'], 0, ',', '.') ?>
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
 </div>
 
 
