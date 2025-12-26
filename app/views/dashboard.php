@@ -78,7 +78,6 @@
         </div>
     </div>
 </div>
-<br>
 <!-- Laporan & Rekap (Shortcut) -->
 <div class="mt-3 mb-4">
     <h5 class="mb-3">Laporan & Rekap</h5>

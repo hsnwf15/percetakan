@@ -415,4 +415,80 @@ SELECT DATE(paid_at) d, SUM(amount) s
             ["Attachment" => true]
         );
     }
+    public function orderBulanan()
+    {
+        require_login();
+        global $pdo;
+
+        $month = (int)($_GET['month'] ?? date('m'));
+        $year  = (int)($_GET['year'] ?? date('Y'));
+
+        $start = sprintf('%04d-%02d-01', $year, $month);
+        $end   = date('Y-m-d', strtotime("$start +1 month"));
+
+        // 1) Total order bulan itu (berdasarkan created_at)
+        $stmt = $pdo->prepare("
+        SELECT COUNT(*)
+        FROM orders
+        WHERE created_at >= ? AND created_at < ?
+    ");
+        $stmt->execute([$start, $end]);
+        $totalOrder = (int)$stmt->fetchColumn();
+
+        // 2) Rekap status order bulan itu
+        $stmt = $pdo->prepare("
+        SELECT status, COUNT(*) AS total
+        FROM orders
+        WHERE created_at >= ? AND created_at < ?
+        GROUP BY status
+        ORDER BY total DESC
+    ");
+        $stmt->execute([$start, $end]);
+        $byStatusRaw = $stmt->fetchAll();
+
+        // Biar urut & konsisten
+        $statusList = ['admin', 'design', 'vendor', 'ready', 'picked'];
+        $byStatus = array_fill_keys($statusList, 0);
+
+        foreach ($byStatusRaw as $r) {
+            $st = $r['status'];
+            $cnt = (int)$r['total'];
+            if (!isset($byStatus[$st])) $byStatus[$st] = 0; // jaga2 status lain
+            $byStatus[$st] += $cnt;
+        }
+
+        // 3) Data grafik distribusi status
+        $labels = array_keys($byStatus);
+        $data   = array_values($byStatus);
+
+        // 4) Detail order bulan itu (untuk tabel)
+        $stmt = $pdo->prepare("
+  SELECT
+    o.id,
+    o.created_at,
+    c.name AS customer,
+    o.product,
+    o.quantity,
+    o.status,
+    o.deadline,
+    o.total_price
+  FROM orders o
+  LEFT JOIN customers c ON c.id = o.customer_id
+  WHERE o.created_at >= ? AND o.created_at < ?
+  ORDER BY o.created_at DESC
+  LIMIT 200
+");
+        $stmt->execute([$start, $end]);
+        $orders = $stmt->fetchAll();
+
+        view('report_order_bulanan', compact(
+            'month',
+            'year',
+            'totalOrder',
+            'byStatus',
+            'labels',
+            'data',
+            'orders'
+        ));
+    }
 }
