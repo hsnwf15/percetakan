@@ -80,7 +80,7 @@
 </div>
 <!-- Laporan & Rekap (Shortcut) -->
 <div class="mt-3 mb-4">
-    <h5 class="mb-3">Laporan & Rekap</h5>
+    <h5 class="mb-3">Laporan</h5>
 
     <div class="row g-3">
         <!-- Laporan Pemasukan Bulanan -->
@@ -107,9 +107,9 @@
 
         <!-- Rekap Fee Mingguan (kalau sudah ada halamannya nanti) -->
         <div class="col-md-4">
-            <a href="<?= h(url('dashboard/feeMingguan')) ?>" class="card shadow-sm text-decoration-none">
+            <a href="<?= h(url('dashboard/feeDesainerBulanan')) ?>" class="card shadow-sm text-decoration-none">
                 <div class="card-body">
-                    <div class="text-muted">Rekap</div>
+                    <div class="text-muted">Laporan</div>
                     <div class="fw-semibold" style="font-size:18px;">🎨 Fee Desainer</div>
                     <div class="text-muted" style="font-size:12px;">Mingguan (reset tiap Senin) + laporan bulanan</div>
                 </div>
