@@ -31,6 +31,10 @@
 
         <button class="btn btn-primary">Tampilkan</button>
     </form>
+    <a class="btn btn-outline-secondary"
+        href="<?= h(url('dashboard/kinerjaDesainerPdf')) ?>&month=<?= (int)$month ?>&year=<?= (int)$year ?>">
+        Export PDF
+    </a>
 </div>
 
 <div class="row g-3 mb-3">

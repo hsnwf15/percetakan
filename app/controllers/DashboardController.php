@@ -908,4 +908,100 @@ SELECT DATE(paid_at) d, SUM(amount) s
             'totalFee'
         ));
     }
+    public function kinerjaDesainerPdf()
+    {
+        require_login();
+        global $pdo;
+
+        $month = (int)($_GET['month'] ?? date('m'));
+        $year  = (int)($_GET['year'] ?? date('Y'));
+
+        $start = sprintf('%04d-%02d-01', $year, $month);
+        $end   = date('Y-m-d', strtotime("$start +1 month"));
+
+        // Rekap per desainer (tabel + grafik PDF)
+        $stmt = $pdo->prepare("
+        SELECT
+          u.id,
+          u.name,
+          COUNT(o.id) AS total_order,
+          COALESCE(SUM(o.designer_fee), 0) AS total_fee,
+          COALESCE(AVG(NULLIF(o.designer_fee,0)), 0) AS avg_fee
+        FROM users u
+        LEFT JOIN orders o
+          ON o.assigned_designer = u.id
+         AND o.created_at >= ? AND o.created_at < ?
+        WHERE u.role = 'designer'
+        GROUP BY u.id, u.name
+        ORDER BY total_order DESC, total_fee DESC
+    ");
+        $stmt->execute([$start, $end]);
+        $rows = $stmt->fetchAll();
+
+        // Overview cards
+        $stmt = $pdo->prepare("
+        SELECT COUNT(*)
+        FROM orders
+        WHERE assigned_designer IS NOT NULL
+          AND created_at >= ? AND created_at < ?
+    ");
+        $stmt->execute([$start, $end]);
+        $totalOrder = (int)$stmt->fetchColumn();
+
+        $stmt = $pdo->prepare("
+        SELECT COUNT(DISTINCT o.assigned_designer)
+        FROM orders o
+        JOIN users u ON u.id=o.assigned_designer
+        WHERE u.role='designer'
+          AND o.created_at >= ? AND o.created_at < ?
+    ");
+        $stmt->execute([$start, $end]);
+        $totalDesignerAktif = (int)$stmt->fetchColumn();
+
+        $avgOrderPerDesigner = 0;
+        if ($totalDesignerAktif > 0) {
+            $avgOrderPerDesigner = $totalOrder / $totalDesignerAktif;
+        }
+
+        $stmt = $pdo->prepare("
+        SELECT COALESCE(SUM(designer_fee),0)
+        FROM orders
+        WHERE created_at >= ? AND created_at < ?
+          AND designer_fee IS NOT NULL
+          AND designer_fee > 0
+    ");
+        $stmt->execute([$start, $end]);
+        $totalFee = (float)$stmt->fetchColumn();
+
+        // Untuk skala bar PDF
+        $maxOrder = 0;
+        $maxAvgFee = 0;
+        foreach ($rows as $r) {
+            $o = (int)($r['total_order'] ?? 0);
+            $a = (int)round((float)($r['avg_fee'] ?? 0));
+            if ($o > $maxOrder) $maxOrder = $o;
+            if ($a > $maxAvgFee) $maxAvgFee = $a;
+        }
+        if ($maxOrder <= 0) $maxOrder = 1;
+        if ($maxAvgFee <= 0) $maxAvgFee = 1;
+
+        // Render HTML view ke variable
+        ob_start();
+        include __DIR__ . '/../views/report_kinerja_desainer_pdf.php';
+        $html = ob_get_clean();
+
+        // Dompdf
+        $options = new Options();
+        $options->set('isRemoteEnabled', false);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $dompdf->stream(
+            "Laporan_Kinerja_Desainer_{$month}_{$year}.pdf",
+            ["Attachment" => true]
+        );
+    }
 }
