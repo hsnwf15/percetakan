@@ -810,4 +810,102 @@ SELECT DATE(paid_at) d, SUM(amount) s
             ["Attachment" => true]
         );
     }
+    public function kinerjaDesainer()
+    {
+        require_login();
+        global $pdo;
+
+        $month = (int)($_GET['month'] ?? date('m'));
+        $year  = (int)($_GET['year'] ?? date('Y'));
+
+        $start = sprintf('%04d-%02d-01', $year, $month);
+        $end   = date('Y-m-d', strtotime("$start +1 month"));
+
+        // =========================
+        // 1) Rekap per desainer (tabel + grafik)
+        // =========================
+        $stmt = $pdo->prepare("
+        SELECT
+          u.id,
+          u.name,
+          COUNT(o.id) AS total_order,
+          COALESCE(SUM(o.designer_fee), 0) AS total_fee,
+          COALESCE(AVG(NULLIF(o.designer_fee,0)), 0) AS avg_fee
+        FROM users u
+        LEFT JOIN orders o
+          ON o.assigned_designer = u.id
+         AND o.created_at >= ? AND o.created_at < ?
+        WHERE u.role = 'designer'
+        GROUP BY u.id, u.name
+        ORDER BY total_order DESC, total_fee DESC
+    ");
+        $stmt->execute([$start, $end]);
+        $rows = $stmt->fetchAll();
+
+        // data grafik
+        $labels = [];
+        $orderCounts = [];
+        $avgFees = [];
+        foreach ($rows as $r) {
+            $labels[] = $r['name'];
+            $orderCounts[] = (int)($r['total_order'] ?? 0);
+            $avgFees[] = (int)round((float)($r['avg_fee'] ?? 0));
+        }
+
+        // =========================
+        // 2) Card ringkas (overview)
+        // =========================
+        // total order bulan ini (yang sudah assigned desainer)
+        $stmt = $pdo->prepare("
+        SELECT COUNT(*) 
+        FROM orders
+        WHERE assigned_designer IS NOT NULL
+          AND created_at >= ? AND created_at < ?
+    ");
+        $stmt->execute([$start, $end]);
+        $totalOrder = (int)$stmt->fetchColumn();
+
+        // total desainer aktif (punya minimal 1 order di bulan ini)
+        $stmt = $pdo->prepare("
+        SELECT COUNT(DISTINCT o.assigned_designer)
+        FROM orders o
+        JOIN users u ON u.id = o.assigned_designer
+        WHERE u.role='designer'
+          AND o.created_at >= ? AND o.created_at < ?
+    ");
+        $stmt->execute([$start, $end]);
+        $totalDesignerAktif = (int)$stmt->fetchColumn();
+
+        // rata-rata order per desainer aktif
+        $avgOrderPerDesigner = 0;
+        if ($totalDesignerAktif > 0) {
+            $avgOrderPerDesigner = $totalOrder / $totalDesignerAktif;
+        }
+
+        // opsional: total fee bulan ini (buat insight tambahan)
+        $stmt = $pdo->prepare("
+        SELECT COALESCE(SUM(designer_fee),0)
+        FROM orders
+        WHERE created_at >= ? AND created_at < ?
+          AND designer_fee IS NOT NULL
+          AND designer_fee > 0
+    ");
+        $stmt->execute([$start, $end]);
+        $totalFee = (float)$stmt->fetchColumn();
+
+        view('report_kinerja_desainer', compact(
+            'month',
+            'year',
+            'start',
+            'end',
+            'rows',
+            'labels',
+            'orderCounts',
+            'avgFees',
+            'totalOrder',
+            'totalDesignerAktif',
+            'avgOrderPerDesigner',
+            'totalFee'
+        ));
+    }
 }
