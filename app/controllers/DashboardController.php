@@ -1004,4 +1004,92 @@ SELECT DATE(paid_at) d, SUM(amount) s
             ["Attachment" => true]
         );
     }
+    public function revisiDesain()
+    {
+        require_login();
+        global $pdo;
+
+        $month = (int)($_GET['month'] ?? date('m'));
+        $year  = (int)($_GET['year'] ?? date('Y'));
+
+        $start = sprintf('%04d-%02d-01', $year, $month);
+        $end   = date('Y-m-d', strtotime("$start +1 month"));
+
+        // 1) Total revisi
+        $stmt = $pdo->prepare("
+        SELECT COUNT(*) AS total_revisi
+        FROM design_revisions r
+        WHERE r.created_at >= ? AND r.created_at < ?
+    ");
+        $stmt->execute([$start, $end]);
+        $totalRevisi = (int)$stmt->fetchColumn();
+
+        // 2) Rata-rata revisi per order (yang punya revisi)
+        $stmt = $pdo->prepare("
+        SELECT COALESCE(AVG(t.cnt),0) AS avg_revisi_per_order
+        FROM (
+          SELECT r.order_id, COUNT(*) cnt
+          FROM design_revisions r
+          WHERE r.created_at >= ? AND r.created_at < ?
+          GROUP BY r.order_id
+        ) t
+    ");
+        $stmt->execute([$start, $end]);
+        $avgRevisiPerOrder = (float)$stmt->fetchColumn();
+
+        // 3) Top order dengan revisi terbanyak
+        $stmt = $pdo->prepare("
+        SELECT
+          o.id AS order_id,
+          c.name AS customer,
+          o.product,
+          o.created_at,
+          COUNT(r.id) AS total_revisi
+        FROM design_revisions r
+        JOIN orders o ON o.id = r.order_id
+        LEFT JOIN customers c ON c.id = o.customer_id
+        WHERE r.created_at >= ? AND r.created_at < ?
+        GROUP BY o.id, c.name, o.product, o.created_at
+        ORDER BY total_revisi DESC
+        LIMIT 15
+    ");
+        $stmt->execute([$start, $end]);
+        $topOrders = $stmt->fetchAll();
+
+        // 4) Grafik revisi per desainer
+        $stmt = $pdo->prepare("
+        SELECT
+          u.id,
+          u.name,
+          COUNT(r.id) AS total_revisi
+        FROM design_revisions r
+        JOIN orders o ON o.id = r.order_id
+        JOIN users u ON u.id = o.assigned_designer
+        WHERE r.created_at >= ? AND r.created_at < ?
+          AND u.role='designer'
+        GROUP BY u.id, u.name
+        ORDER BY total_revisi DESC
+    ");
+        $stmt->execute([$start, $end]);
+        $perDesigner = $stmt->fetchAll();
+
+        $labels = [];
+        $data = [];
+        foreach ($perDesigner as $d) {
+            $labels[] = $d['name'];
+            $data[] = (int)$d['total_revisi'];
+        }
+
+        view('report_revisi_desain', compact(
+            'month',
+            'year',
+            'start',
+            'end',
+            'totalRevisi',
+            'avgRevisiPerOrder',
+            'topOrders',
+            'labels',
+            'data'
+        ));
+    }
 }
