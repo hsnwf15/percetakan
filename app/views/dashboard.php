@@ -105,13 +105,24 @@
             </a>
         </div>
 
-        <!-- Rekap Fee Mingguan (kalau sudah ada halamannya nanti) -->
+        <!-- Rekap Fee desainer -->
         <div class="col-md-4">
             <a href="<?= h(url('dashboard/feeDesainerBulanan')) ?>" class="card shadow-sm text-decoration-none">
                 <div class="card-body">
                     <div class="text-muted">Laporan</div>
                     <div class="fw-semibold" style="font-size:18px;">🎨 Fee Desainer</div>
-                    <div class="text-muted" style="font-size:12px;">Mingguan (reset tiap Senin) + laporan bulanan</div>
+                    <div class="text-muted" style="font-size:12px;">Rekap Fee per Desainer + Rekap Mingguan/Bulanan</div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Rekap kinerja desainer -->
+        <div class="col-md-4">
+            <a href="<?= h(url('dashboard/kinerjaDesainer')) ?>" class="card shadow-sm text-decoration-none">
+                <div class="card-body">
+                    <div class="text-muted">Laporan</div>
+                    <div class="fw-semibold" style="font-size:18px;">🎨 Kinerja Desainer</div>
+                    <div class="text-muted" style="font-size:12px;">Jumlah order per Desainer + Rata-rata Fee + Perbandingan antar Desainer</div>
                 </div>
             </a>
         </div>
