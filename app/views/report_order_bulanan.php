@@ -30,6 +30,11 @@ function label_status($st)
                 value="<?= (int)$year ?>">
             <button class="btn btn-primary">Tampilkan</button>
         </form>
+        <a class="btn btn-outline-dark"
+            href="<?= h(url('dashboard/orderBulananPdf')) ?>&month=<?= (int)$month ?>&year=<?= (int)$year ?>">
+            Export PDF
+        </a>
+
     </div>
 
     <div class="row g-3 mb-4">

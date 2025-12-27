@@ -491,4 +491,163 @@ SELECT DATE(paid_at) d, SUM(amount) s
             'orders'
         ));
     }
+    public function orderBulananPdf()
+    {
+        require_login();
+        global $pdo;
+
+        $month = (int)($_GET['month'] ?? date('m'));
+        $year  = (int)($_GET['year'] ?? date('Y'));
+
+        $start = sprintf('%04d-%02d-01', $year, $month);
+        $end   = date('Y-m-d', strtotime("$start +1 month"));
+
+        // --- Summary: total order
+        $stmt = $pdo->prepare("
+      SELECT COUNT(*) 
+      FROM orders
+      WHERE created_at >= ? AND created_at < ?
+    ");
+        $stmt->execute([$start, $end]);
+        $totalOrder = (int)$stmt->fetchColumn();
+
+        // --- Distribusi status
+        $stmt = $pdo->prepare("
+      SELECT status, COUNT(*) c
+      FROM orders
+      WHERE created_at >= ? AND created_at < ?
+      GROUP BY status
+    ");
+        $stmt->execute([$start, $end]);
+        $raw = $stmt->fetchAll();
+
+        $byStatus = [
+            'admin' => 0,
+            'design' => 0,
+            'vendor' => 0,
+            'ready' => 0,
+            'picked' => 0
+        ];
+        foreach ($raw as $r) {
+            $s = $r['status'];
+            $byStatus[$s] = (int)$r['c'];
+        }
+
+        // --- Detail orders untuk tabel
+        $stmt = $pdo->prepare("
+      SELECT o.id, o.created_at, c.name AS customer, o.product, o.quantity, 
+             o.status, o.deadline, o.total_price
+      FROM orders o
+      LEFT JOIN customers c ON c.id=o.customer_id
+      WHERE o.created_at >= ? AND o.created_at < ?
+      ORDER BY o.created_at DESC
+      LIMIT 200
+    ");
+        $stmt->execute([$start, $end]);
+        $orders = $stmt->fetchAll();
+
+        // --- Bikin grafik statis (PNG base64)
+        $chartBase64 = $this->makeStatusBarChartBase64($byStatus);
+
+        // --- Render HTML view ke string
+        $monthName = $this->bulanIndo($month);
+
+        ob_start();
+        include __DIR__ . '/../views/report_order_bulanan_pdf.php';
+        $html = ob_get_clean();
+
+        // --- Dompdf
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', false); // offline OK, kita pakai base64
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $dompdf->stream("Laporan_Order_{$month}_{$year}.pdf", ["Attachment" => true]);
+    }
+
+    // helper nama bulan indo
+    private function bulanIndo($m)
+    {
+        $arr = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+        return $arr[(int)$m] ?? '';
+    }
+    private function makeStatusBarChartBase64(array $byStatus)
+    {
+        $labels = ['admin', 'design', 'vendor', 'ready', 'picked'];
+        $values = [];
+        foreach ($labels as $k) $values[] = (int)($byStatus[$k] ?? 0);
+
+        $w = 700;
+        $h = 260;
+        $img = imagecreatetruecolor($w, $h);
+
+        $white = imagecolorallocate($img, 255, 255, 255);
+        $black = imagecolorallocate($img, 0, 0, 0);
+        $gray  = imagecolorallocate($img, 220, 220, 220);
+
+        imagefilledrectangle($img, 0, 0, $w, $h, $white);
+
+        // area chart
+        $padL = 60;
+        $padR = 20;
+        $padT = 20;
+        $padB = 60;
+        $cw = $w - $padL - $padR;
+        $ch = $h - $padT - $padB;
+
+        // sumbu
+        imageline($img, $padL, $padT, $padL, $padT + $ch, $black);
+        imageline($img, $padL, $padT + $ch, $padL + $cw, $padT + $ch, $black);
+
+        $max = max($values);
+        if ($max < 1) $max = 1;
+
+        // grid y (5 garis)
+        for ($i = 0; $i <= 5; $i++) {
+            $y = $padT + (int)($ch * ($i / 5));
+            imageline($img, $padL, $y, $padL + $cw, $y, $gray);
+            $val = (int)round($max * (1 - $i / 5));
+            imagestring($img, 2, 5, $y - 7, (string)$val, $black);
+        }
+
+        // bar
+        $barCount = count($labels);
+        $gap = 18;
+        $barW = (int)(($cw - ($gap * ($barCount + 1))) / $barCount);
+        $x = $padL + $gap;
+
+        // warna bar per status (mirip badge kamu)
+        $colors = [
+            'admin'  => imagecolorallocate($img, 108, 117, 125),
+            'design' => imagecolorallocate($img, 13, 110, 253),
+            'vendor' => imagecolorallocate($img, 255, 193, 7),
+            'ready'  => imagecolorallocate($img, 25, 135, 84),
+            'picked' => imagecolorallocate($img, 33, 37, 41),
+        ];
+
+        foreach ($labels as $i => $k) {
+            $v = $values[$i];
+            $bh = (int)round(($v / $max) * $ch);
+            $y1 = $padT + $ch;
+            $y0 = $y1 - $bh;
+
+            imagefilledrectangle($img, $x, $y0, $x + $barW, $y1, $colors[$k] ?? $black);
+            imagerectangle($img, $x, $y0, $x + $barW, $y1, $black);
+
+            // label bawah
+            imagestring($img, 2, $x, $padT + $ch + 8, $k, $black);
+            // angka di atas bar
+            imagestring($img, 2, $x + (int)($barW / 2) - 4, max($y0 - 14, 2), (string)$v, $black);
+
+            $x += $barW + $gap;
+        }
+
+        ob_start();
+        imagepng($img);
+        $pngData = ob_get_clean();
+        imagedestroy($img);
+
+        return base64_encode($pngData);
+    }
 }
