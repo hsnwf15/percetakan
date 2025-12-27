@@ -126,6 +126,17 @@
                 </div>
             </a>
         </div>
+
+        <!-- Rekap revisi desain -->
+        <div class="col-md-4">
+            <a href="<?= h(url('dashboard/revisiDesain')) ?>" class="card shadow-sm text-decoration-none">
+                <div class="card-body">
+                    <div class="text-muted">Laporan</div>
+                    <div class="fw-semibold" style="font-size:18px;">🎨 Revisi Desain</div>
+                    <div class="text-muted" style="font-size:12px;">Jumlah revisi per desain + Order dengan revisi terbanyak</div>
+                </div>
+            </a>
+        </div>
     </div>
 </div>
 <h4 class="mb-3">Fee Desainer Minggu Ini</h4>
