@@ -1092,4 +1092,103 @@ SELECT DATE(paid_at) d, SUM(amount) s
             'data'
         ));
     }
+    public function revisiDesainPdf()
+    {
+        require_login();
+        global $pdo;
+
+        $month = (int)($_GET['month'] ?? date('m'));
+        $year  = (int)($_GET['year'] ?? date('Y'));
+
+        $start = sprintf('%04d-%02d-01', $year, $month);
+        $end   = date('Y-m-d', strtotime("$start +1 month"));
+
+        // 1) Total revisi
+        $stmt = $pdo->prepare("
+        SELECT COUNT(*)
+        FROM design_revisions r
+        WHERE r.created_at >= ? AND r.created_at < ?
+    ");
+        $stmt->execute([$start, $end]);
+        $totalRevisi = (int)$stmt->fetchColumn();
+
+        // 2) Rata-rata revisi per order (yang punya revisi)
+        $stmt = $pdo->prepare("
+        SELECT COALESCE(AVG(t.cnt),0)
+        FROM (
+          SELECT r.order_id, COUNT(*) cnt
+          FROM design_revisions r
+          WHERE r.created_at >= ? AND r.created_at < ?
+          GROUP BY r.order_id
+        ) t
+    ");
+        $stmt->execute([$start, $end]);
+        $avgRevisiPerOrder = (float)$stmt->fetchColumn();
+
+        // 3) Top order revisi + dampak waktu (proxy)
+        // last_revision_at & selisih hari dari order dibuat
+        $stmt = $pdo->prepare("
+        SELECT
+          o.id AS order_id,
+          c.name AS customer,
+          o.product,
+          o.created_at AS order_created_at,
+          COUNT(r.id) AS total_revisi,
+          MAX(r.created_at) AS last_revision_at,
+          DATEDIFF(MAX(r.created_at), o.created_at) AS days_to_last_revision
+        FROM design_revisions r
+        JOIN orders o ON o.id = r.order_id
+        LEFT JOIN customers c ON c.id = o.customer_id
+        WHERE r.created_at >= ? AND r.created_at < ?
+        GROUP BY o.id, c.name, o.product, o.created_at
+        ORDER BY total_revisi DESC
+        LIMIT 15
+    ");
+        $stmt->execute([$start, $end]);
+        $topOrders = $stmt->fetchAll();
+
+        // 4) Revisi per desainer
+        $stmt = $pdo->prepare("
+        SELECT
+          u.id,
+          u.name,
+          COUNT(r.id) AS total_revisi
+        FROM design_revisions r
+        JOIN orders o ON o.id = r.order_id
+        JOIN users u ON u.id = o.assigned_designer
+        WHERE r.created_at >= ? AND r.created_at < ?
+          AND u.role='designer'
+        GROUP BY u.id, u.name
+        ORDER BY total_revisi DESC
+    ");
+        $stmt->execute([$start, $end]);
+        $perDesigner = $stmt->fetchAll();
+
+        // Skala untuk bar PDF
+        $maxRev = 0;
+        foreach ($perDesigner as $d) {
+            $v = (int)($d['total_revisi'] ?? 0);
+            if ($v > $maxRev) $maxRev = $v;
+        }
+        if ($maxRev <= 0) $maxRev = 1;
+
+        // Render HTML PDF view
+        ob_start();
+        include __DIR__ . '/../views/report_revisi_desain_pdf.php';
+        $html = ob_get_clean();
+
+        // Dompdf
+        $options = new Options();
+        $options->set('isRemoteEnabled', false);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $dompdf->stream(
+            "Laporan_Revisi_Desain_{$month}_{$year}.pdf",
+            ["Attachment" => true]
+        );
+    }
 }

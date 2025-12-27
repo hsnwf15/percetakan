@@ -16,6 +16,10 @@
         <input class="form-control" type="number" name="year" value="<?= (int)$year ?>" style="width:110px;" min="2000" max="2100">
         <button class="btn btn-primary">Tampilkan</button>
     </form>
+    <a class="btn btn-outline-secondary"
+        href="<?= h(url('dashboard/revisiDesainPdf')) ?>&month=<?= (int)$month ?>&year=<?= (int)$year ?>">
+        Export PDF
+    </a>
 </div>
 
 <div class="row g-3 mb-3">
