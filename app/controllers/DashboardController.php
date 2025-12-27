@@ -650,4 +650,85 @@ SELECT DATE(paid_at) d, SUM(amount) s
 
         return base64_encode($pngData);
     }
+    public function feeDesainerBulanan()
+    {
+        require_login();
+        global $pdo;
+
+        $month = (int)($_GET['month'] ?? date('m'));
+        $year  = (int)($_GET['year'] ?? date('Y'));
+
+        $start = sprintf('%04d-%02d-01', $year, $month);
+        $end   = date('Y-m-d', strtotime("$start +1 month"));
+
+        // =========================
+        // A) Rekap per desainer
+        // =========================
+        $stmt = $pdo->prepare("
+        SELECT
+            u.id,
+            u.name,
+            COUNT(o.id) AS total_order,
+            COALESCE(SUM(o.designer_fee),0) AS total_fee,
+            COALESCE(AVG(o.designer_fee),0) AS avg_fee
+        FROM orders o
+        JOIN users u ON u.id = o.assigned_designer
+        WHERE u.role='designer'
+          AND o.created_at >= ? AND o.created_at < ?
+          AND o.designer_fee IS NOT NULL
+          AND o.designer_fee > 0
+        GROUP BY u.id, u.name
+        ORDER BY total_fee DESC
+    ");
+        $stmt->execute([$start, $end]);
+        $rows = $stmt->fetchAll();
+
+        // data grafik batang: fee per desainer
+        $labels = [];
+        $dataFee = [];
+        foreach ($rows as $r) {
+            $labels[] = $r['name'];
+            $dataFee[] = (int)$r['total_fee'];
+        }
+
+        // =========================
+        // B) Rekap mingguan dalam bulan tsb
+        // (week-of-month: 1..5/6)
+        // =========================
+        $stmt = $pdo->prepare("
+        SELECT
+          (WEEK(o.created_at, 1) - WEEK(?, 1) + 1) AS week_in_month,
+          COUNT(*) AS total_order,
+          COALESCE(SUM(o.designer_fee),0) AS total_fee
+        FROM orders o
+        WHERE o.created_at >= ? AND o.created_at < ?
+          AND o.designer_fee IS NOT NULL
+          AND o.designer_fee > 0
+        GROUP BY week_in_month
+        ORDER BY week_in_month ASC
+    ");
+        $stmt->execute([$start, $start, $end]);
+        $weekly = $stmt->fetchAll();
+
+        // total bulan (buat card ringkas)
+        $totalFeeMonth = 0;
+        $totalOrderMonth = 0;
+        foreach ($rows as $r) {
+            $totalFeeMonth += (float)$r['total_fee'];
+            $totalOrderMonth += (int)$r['total_order'];
+        }
+
+        view('report_fee_desainer_bulanan', compact(
+            'month',
+            'year',
+            'start',
+            'end',
+            'rows',
+            'labels',
+            'dataFee',
+            'weekly',
+            'totalFeeMonth',
+            'totalOrderMonth'
+        ));
+    }
 }
