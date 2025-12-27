@@ -16,10 +16,37 @@ $year  = (int)($_GET['year'] ?? date('Y'));
 
     <div class="container mt-4">
 
-        <h3 class="mb-1">Laporan Pemasukan Bulanan</h3>
-        <p class="text-muted">
-            Bulan <?= date('F', mktime(0, 0, 0, $month, 1)) ?> Tahun <?= $year ?>
-        </p>
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+            <div>
+                <h1 class="mb-1">Laporan Pemasukan Bulanan</h1>
+                <div class="text-muted">
+                    Bulan <?= (int)$month ?> Tahun <?= (int)$year ?>
+                </div>
+            </div>
+
+            <form class="d-flex gap-2 align-items-center"
+                method="get" action="">
+                <input type="hidden" name="r" value="dashboard/pemasukanBulanan">
+
+                <select class="form-select" name="month" style="width: 90px;">
+                    <?php for ($m = 1; $m <= 12; $m++): ?>
+                        <option value="<?= $m ?>" <?= ((int)$month === $m ? 'selected' : '') ?>>
+                            <?= str_pad((string)$m, 2, '0', STR_PAD_LEFT) ?>
+                        </option>
+                    <?php endfor; ?>
+                </select>
+
+                <input class="form-control" type="number" name="year"
+                    value="<?= (int)$year ?>" style="width: 110px;"
+                    min="2000" max="2100">
+
+                <button class="btn btn-primary">Tampilkan</button>
+            </form>
+            <a href="<?= url("report/incomePdf&month=$month&year=$year") ?>"
+                class="btn btn-outline-dark">
+                Export PDF
+            </a>
+        </div>
 
         <!-- SUMMARY -->
         <div class="row mb-4">
@@ -81,10 +108,6 @@ $year  = (int)($_GET['year'] ?? date('Y'));
 
             </div>
         </div>
-        <a href="<?= url("report/incomePdf&month=$month&year=$year") ?>"
-            class="btn btn-danger">
-            Export PDF
-        </a>
 
     </div>
 
