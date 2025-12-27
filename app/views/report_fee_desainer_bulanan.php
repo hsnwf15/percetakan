@@ -17,6 +17,10 @@
             style="width:110px;" min="2000" max="2100">
         <button class="btn btn-primary">Tampilkan</button>
     </form>
+    <a class="btn btn-outline-secondary"
+        href="<?= h(url('dashboard/feeDesainerPdf')) ?>&month=<?= (int)$month ?>&year=<?= (int)$year ?>">
+        Export PDF
+    </a>
 </div>
 
 <div class="row g-3 mb-3">

@@ -557,9 +557,9 @@ SELECT DATE(paid_at) d, SUM(amount) s
         $html = ob_get_clean();
 
         // --- Dompdf
-        $options = new \Dompdf\Options();
+        $options = new Options();
         $options->set('isRemoteEnabled', false); // offline OK, kita pakai base64
-        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
@@ -730,5 +730,84 @@ SELECT DATE(paid_at) d, SUM(amount) s
             'totalFeeMonth',
             'totalOrderMonth'
         ));
+    }
+
+    public function feeDesainerPdf()
+    {
+        require_login();
+        global $pdo;
+
+        $month = (int)($_GET['month'] ?? date('m'));
+        $year  = (int)($_GET['year'] ?? date('Y'));
+
+        $start = sprintf('%04d-%02d-01', $year, $month);
+        $end   = date('Y-m-d', strtotime("$start +1 month"));
+
+        // Rekap per desainer
+        $stmt = $pdo->prepare("
+        SELECT
+            u.id,
+            u.name,
+            COUNT(o.id) AS total_order,
+            COALESCE(SUM(o.designer_fee),0) AS total_fee,
+            COALESCE(AVG(o.designer_fee),0) AS avg_fee
+        FROM orders o
+        JOIN users u ON u.id = o.assigned_designer
+        WHERE u.role='designer'
+          AND o.created_at >= ? AND o.created_at < ?
+          AND o.designer_fee IS NOT NULL
+          AND o.designer_fee > 0
+        GROUP BY u.id, u.name
+        ORDER BY total_fee DESC
+    ");
+        $stmt->execute([$start, $end]);
+        $rows = $stmt->fetchAll();
+
+        // Rekap mingguan dalam bulan
+        $stmt = $pdo->prepare("
+        SELECT
+          (WEEK(o.created_at, 1) - WEEK(?, 1) + 1) AS week_in_month,
+          COUNT(*) AS total_order,
+          COALESCE(SUM(o.designer_fee),0) AS total_fee
+        FROM orders o
+        WHERE o.created_at >= ? AND o.created_at < ?
+          AND o.designer_fee IS NOT NULL
+          AND o.designer_fee > 0
+        GROUP BY week_in_month
+        ORDER BY week_in_month ASC
+    ");
+        $stmt->execute([$start, $start, $end]);
+        $weekly = $stmt->fetchAll();
+
+        // Total + max fee (untuk lebar bar)
+        $totalFeeMonth = 0.0;
+        $totalOrderMonth = 0;
+        $maxFee = 0;
+        foreach ($rows as $r) {
+            $fee = (int)($r['total_fee'] ?? 0);
+            $totalFeeMonth += $fee;
+            $totalOrderMonth += (int)($r['total_order'] ?? 0);
+            if ($fee > $maxFee) $maxFee = $fee;
+        }
+        if ($maxFee <= 0) $maxFee = 1; // avoid division by zero
+
+        // Render HTML PDF view
+        ob_start();
+        include __DIR__ . '/../views/report_fee_desainer_pdf.php';
+        $html = ob_get_clean();
+
+        // Dompdf
+        $options = new Options();
+        $options->set('isRemoteEnabled', false);
+
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $dompdf->stream(
+            "Laporan_Fee_Desainer_{$month}_{$year}.pdf",
+            ["Attachment" => true]
+        );
     }
 }
