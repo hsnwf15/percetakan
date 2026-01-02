@@ -13,6 +13,14 @@ $isDesigner = ($me['role'] ?? '') === 'designer';
 $isAssigned = (int)($order['assigned_designer'] ?? 0) === (int)$me['id'];
 $isDesignStage = $order['status'] === 'design';
 $canEditFee = $isDesigner && $isAssigned && $isDesignStage;
+$canStartDesign =
+    ($order['status'] ?? '') === 'admin' &&
+    (
+        $role === 'admin' ||
+        $role === 'owner' ||
+        ($isDesigner && $isAssigned)
+    );
+
 ?>
 
 <?php if ($role === 'designer' && !$canEdit): ?>
@@ -132,6 +140,20 @@ $canEditFee = $isDesigner && $isAssigned && $isDesignStage;
                 <div class="card">
                     <div class="card-header">Upload Revisi Baru</div>
                     <div class="card-body">
+                        <?php if ($canStartDesign): ?>
+                            <form method="post" action="<?= h(url('orders/updateStatus')) ?>" class="mb-3"
+                                onsubmit="return confirm('Mulai desain? Status order akan pindah ke DESIGN.')">
+                                <?php csrf_field(); ?>
+                                <input type="hidden" name="id" value="<?= h($order['id']) ?>">
+                                <input type="hidden" name="status" value="design">
+                                <button class="btn btn-outline-primary w-100">
+                                    Mulai Desain (pindah ke status: design)
+                                </button>
+                            </form>
+                            <div class="form-text mb-3">
+                                Jika tidak ada revisi, kamu tetap bisa mulai desain dan lanjut approve final tanpa upload revisi.
+                            </div>
+                        <?php endif; ?>
                         <form method="post" action="<?= h(
                                                         url("rev/upload"),
                                                     ) ?>" enctype="multipart/form-data">

@@ -320,14 +320,19 @@ class OrdersController
             die("Forbidden");
         }
 
-        // Desainer hanya boleh ubah fee saat status design
+        // Desainer: hanya validasi fee kalau memang sedang mengirim designer_fee
         if (($me['role'] ?? '') === 'designer') {
-            if ($order['status'] !== 'design') {
-                die("Fee hanya bisa diubah saat tahap desain");
-            }
 
-            if ($newFee === null || $newFee < 5000 || $newFee > 20000) {
-                die("Fee desain harus antara 5.000 – 20.000");
+            // tetap wajib assigned (kamu sudah cek di atas)
+            // fee hanya bisa diubah saat order masih design
+            if ($newFee !== null) {
+                if (($order['status'] ?? '') !== 'design') {
+                    die("Fee hanya bisa diubah saat tahap desain");
+                }
+
+                if ($newFee < 5000 || $newFee > 20000) {
+                    die("Fee desain harus antara 5.000 – 20.000");
+                }
             }
         }
 
