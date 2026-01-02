@@ -185,18 +185,15 @@ $canEditFee = $isDesigner && $isAssigned && $isDesignStage;
                             <?php endif; ?>
                         </div>
 
-                        <form method="post" action="<?= h(
-                                                        url("rev/approveFinal"),
-                                                    ) ?>" onsubmit="return confirm('Setujui final? Status akan pindah ke vendor.')">
+                        <form method="post" action="<?= h(url("rev/approveFinal")) ?>"
+                            onsubmit="return confirm('Setujui final? Status akan pindah ke vendor.')">
                             <?php csrf_field(); ?>
                             <input type="hidden" name="order_id" value="<?= h($order["id"]) ?>">
+
                             <button class="btn btn-success w-100"
-                                <?= empty($revisions)
-                                    ? 'disabled title="Belum ada revisi"'
-                                    : "" ?>
-                                <?= !empty($approval)
-                                    ? 'disabled title="Sudah di-approve"'
-                                    : "" ?>>Setujui Final & Lanjut ke Vendor</button>
+                                <?= !empty($approval) ? 'disabled title="Sudah di-approve"' : "" ?>>
+                                Setujui Final & Lanjut ke Vendor
+                            </button>
                         </form>
                     </div>
                 </div>

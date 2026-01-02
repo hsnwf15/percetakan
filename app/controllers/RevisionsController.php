@@ -132,32 +132,26 @@ class RevisionsController
             die("Forbidden");
         }
 
-        // harus ada minimal 1 revisi
+        // ambil revisi terakhir (boleh 0 jika tidak ada revisi)
         $last = (int) $pdo
-            ->query(
-                "SELECT IFNULL(MAX(rev_no),0) FROM design_revisions WHERE order_id={$orderId}",
-            )
+            ->query("SELECT IFNULL(MAX(rev_no),0) FROM design_revisions WHERE order_id={$orderId}")
             ->fetchColumn();
-        if ($last <= 0) {
-            flash("Belum ada revisi untuk di-approve");
-            redirect("?r=orders/detail&id=" . $orderId);
-        }
 
-        // set / update approval
+        // set / update approval (boleh approved_rev = 0)
         $pdo->prepare(
             "INSERT INTO design_approvals (order_id, approved_rev)
-                   VALUES (?,?)
-                   ON DUPLICATE KEY UPDATE approved_rev=VALUES(approved_rev), approved_at=NOW()",
+     VALUES (?,?)
+     ON DUPLICATE KEY UPDATE approved_rev=VALUES(approved_rev), approved_at=NOW()"
         )->execute([$orderId, $last]);
 
         // lanjut ke vendor
-        $pdo->prepare("UPDATE orders SET status='vendor' WHERE id=?")->execute([
-            $orderId,
-        ]);
+        $pdo->prepare("UPDATE orders SET status='vendor' WHERE id=?")->execute([$orderId]);
 
-        flash(
-            "Final disetujui (Revisi ke-{$last}). Status pindah ke 'vendor'.",
-        );
+        if ($last > 0) {
+            flash("Final disetujui (Revisi ke-{$last}). Status pindah ke 'vendor'.");
+        } else {
+            flash("Final disetujui (tanpa revisi). Status pindah ke 'vendor'.");
+        }
         redirect("?r=orders/detail&id=" . $orderId);
     }
 }
