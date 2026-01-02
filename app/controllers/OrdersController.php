@@ -288,7 +288,7 @@ class OrdersController
 
         $id = (int)($_POST['id'] ?? 0);
         $status = $_POST['status'] ?? 'design';
-        $newFee = (int)($_POST['designer_fee'] ?? 0);
+        $newFee = isset($_POST['designer_fee']) && $_POST['designer_fee'] !== '' ? (int)$_POST['designer_fee'] : null;
 
         if ($id <= 0) {
             die("Order tidak valid");
@@ -300,7 +300,7 @@ class OrdersController
         }
 
         // Ambil order
-        $stmt = $pdo->prepare("SELECT status, assigned_designer FROM orders WHERE id=?");
+        $stmt = $pdo->prepare("SELECT status, assigned_designer, designer_fee FROM orders WHERE id=?");
         $stmt->execute([$id]);
         $order = $stmt->fetch();
 
@@ -326,23 +326,35 @@ class OrdersController
                 die("Fee hanya bisa diubah saat tahap desain");
             }
 
-            if ($newFee < 5000 || $newFee > 20000) {
+            if ($newFee === null || $newFee < 5000 || $newFee > 20000) {
                 die("Fee desain harus antara 5.000 – 20.000");
             }
         }
 
-        // UPDATE SEKALIGUS
-        $pdo->prepare("
-        UPDATE orders
-        SET status = ?, designer_fee = ?
-        WHERE id = ?
-    ")->execute([
-            $status,
-            $newFee,
-            $id
-        ]);
+        // UPDATE: hanya update fee jika ada nilai baru yang valid
+        if ($newFee !== null) {
+            $pdo->prepare("
+            UPDATE orders
+            SET status = ?, designer_fee = ?
+            WHERE id = ?
+        ")->execute([
+                $status,
+                $newFee,
+                $id
+            ]);
+        } else {
+            // Jika tidak ada fee baru, gunakan fee yang sudah ada
+            $pdo->prepare("
+            UPDATE orders
+            SET status = ?
+            WHERE id = ?
+        ")->execute([
+                $status,
+                $id
+            ]);
+        }
 
-        flash("Status & fee berhasil diperbarui");
+        flash("Status berhasil diperbarui");
         redirect("?r=orders/detail&id=" . $id);
     }
 }
