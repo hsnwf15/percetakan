@@ -99,7 +99,10 @@
                 </tr>
             <?php else: ?>
                 <?php $no = 1;
-                foreach ($orders as $o): ?>
+                $grandTotal = 0;
+                foreach ($orders as $o):
+                    $grandTotal += (float)($o['total_price'] ?? 0);
+                ?>
                     <tr>
                         <td><?= $no++ ?></td>
                         <td>#<?= (int)$o['id'] ?></td>
@@ -112,6 +115,10 @@
                         <td class="right">Rp <?= number_format((float)($o['total_price'] ?? 0), 0, ',', '.') ?></td>
                     </tr>
                 <?php endforeach; ?>
+                <tr style="background: #eee; font-weight: bold;">
+                    <td colspan="8" style="text-align:right;">TOTAL</td>
+                    <td class="right">Rp <?= number_format($grandTotal, 0, ',', '.') ?></td>
+                </tr>
             <?php endif; ?>
         </tbody>
     </table>
