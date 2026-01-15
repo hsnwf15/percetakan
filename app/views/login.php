@@ -1,8 +1,9 @@
 <div class="row justify-content-center">
     <div class="col-md-5">
         <div class="card">
-            <div class="card-header">Login</div>
-            <div class="card-body">
+            <div class="card-body text-center pt-4">
+                <img src="<?= h(BASE_URL . '/assets/images/logo.png') ?>" alt="Brother Print Logo" class="mb-4" style="max-width: 150px;">
+                <h3 class="mb-4">Login</h3>
                 <form method="post" action="<?= h(url("auth/login")) ?>">
                     <?php csrf_field(); ?>
                     <div class="mb-3">
