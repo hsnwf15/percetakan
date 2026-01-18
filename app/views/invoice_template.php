@@ -82,11 +82,31 @@
 <body>
     <div class="wrap">
         <div class="row">
-            <div>
-                <h2><?= h($store['name']) ?></h2>
-                <div class="small"><?= h($store['address']) ?></div>
-                <div class="small">Telp: <?= h($store['phone']) ?></div>
-                <div class="small">Email: <?= h($store['email']) ?></div>
+            <div style="display: flex; gap: 15px; width: 60%;">
+                <?php
+                $logoPath = $store['logo'] ?? 'assets/images/logo.png';
+                // Convert relative path to absolute file system path for DOMPDF compatibility
+                if (!filter_var($logoPath, FILTER_VALIDATE_URL) && !file_exists($logoPath)) {
+                    $logoPath = dirname(dirname(dirname(__FILE__))) . '/public/' . $logoPath;
+                }
+                // Convert image to base64 for DOMPDF PDF rendering
+                if (!empty($logoPath) && file_exists($logoPath)) {
+                    $imageData = base64_encode(file_get_contents($logoPath));
+                    $mimeType = mime_content_type($logoPath);
+                    $imageSrc = 'data:' . $mimeType . ';base64,' . $imageData;
+                } else {
+                    $imageSrc = null;
+                }
+                ?>
+                <?php if (!empty($imageSrc)): ?>
+                    <img src="<?= h($imageSrc) ?>" alt="Logo" style="width: 80px; height: auto;">
+                <?php endif; ?>
+                <div>
+                    <h2><?= h($store['name']) ?></h2>
+                    <div class="small"><?= h($store['address']) ?></div>
+                    <div class="small">Telp: <?= h($store['phone']) ?></div>
+                    <div class="small">Email: <?= h($store['email']) ?></div>
+                </div>
             </div>
             <div style="text-align:right">
                 <h3>NOTA PEMBAYARAN</h3>
